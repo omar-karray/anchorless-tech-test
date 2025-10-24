@@ -8,6 +8,7 @@ nav:
   - Context: context.md
   - Data Model: data-model.md
   - Multipart Upload Flow: multipard-upload-direct-to-file-storage.md
+  - API Documentation: api-docs.md
 markdown_extensions:
   - admonition
   - codehilite
