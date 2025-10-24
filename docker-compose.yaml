@@ -1,0 +1,170 @@
+services:
+    laravel.test:
+        env_file:
+            - ./laravel-backend-api/.env
+        build:
+            context: ./laravel-backend-api
+            dockerfile: docker/8.4/Dockerfile
+            args:
+                WWWGROUP: 1000
+        image: 'sail-8.4/app'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        ports:
+            - '${APP_PORT:-80}:80'
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            WWWGROUP: '${WWWGROUP:-1000}'
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            IGNITION_LOCAL_SITES_PATH: '${PWD}'
+        volumes:
+            - ./laravel-backend-api:/var/www/html
+        networks:
+            - appnet
+        depends_on:
+            - pgsql
+            - redis
+            - memcached
+            - minio
+            - mailpit
+            - rabbitmq
+    pgsql:
+        env_file:
+            - ./laravel-backend-api/.env
+        image: 'postgres:17-alpine'
+        ports:
+            - '${FORWARD_DB_PORT:-5432}:5432'
+        environment:
+            PGPASSWORD: '${DB_PASSWORD:-secret}'
+            POSTGRES_DB: '${DB_DATABASE}'
+            POSTGRES_USER: '${DB_USERNAME}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+        volumes:
+            - 'sail-pgsql:/var/lib/postgresql/data'
+            - './laravel-backend-api/docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
+        networks:
+            - appnet
+        healthcheck:
+            test:
+                - CMD
+                - pg_isready
+                - '-q'
+                - '-d'
+                - '${DB_DATABASE}'
+                - '-U'
+                - '${DB_USERNAME}'
+            retries: 3
+            timeout: 5s
+    redis:
+        env_file:
+            - ./laravel-backend-api/.env
+        image: 'redis:alpine'
+        ports:
+            - '${FORWARD_REDIS_PORT:-6379}:6379'
+        volumes:
+            - 'sail-redis:/data'
+        networks:
+            - appnet
+        healthcheck:
+            test:
+                - CMD
+                - redis-cli
+                - ping
+            retries: 3
+            timeout: 5s
+    memcached:
+        env_file:
+            - ./laravel-backend-api/.env
+        image: 'memcached:alpine'
+        ports:
+            - '${FORWARD_MEMCACHED_PORT:-11211}:11211'
+        networks:
+            - appnet
+    minio:
+        env_file:
+            - ./laravel-backend-api/.env
+        image: 'minio/minio:latest'
+        ports:
+            - '${FORWARD_MINIO_PORT:-9000}:9000'
+            - '${FORWARD_MINIO_CONSOLE_PORT:-8900}:8900'
+        environment:
+            MINIO_ROOT_USER: sail
+            MINIO_ROOT_PASSWORD: password
+        volumes:
+            - 'sail-minio:/data'
+        networks:
+            - appnet
+        command: 'minio server /data --console-address ":8900"'
+        healthcheck:
+            test:
+                - CMD
+                - mc
+                - ready
+                - local
+            retries: 3
+            timeout: 5s
+    mailpit:
+        env_file:
+            - ./laravel-backend-api/.env
+        image: 'axllent/mailpit:latest'
+        ports:
+            - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+            - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+        networks:
+            - appnet
+    rabbitmq:
+        env_file:
+            - ./laravel-backend-api/.env
+        image: 'rabbitmq:4-management-alpine'
+        hostname: rabbitmq
+        ports:
+            - '${FORWARD_RABBITMQ_PORT:-5672}:5672'
+            - '${FORWARD_RABBITMQ_DASHBOARD_PORT:-15672}:15672'
+        environment:
+            RABBITMQ_HOST: '%'
+            RABBITMQ_USER: '${RABBITMQ_USER}'
+            RABBITMQ_PASSWORD: '${RABBITMQ_PASSWORD}'
+            RABBITMQ_VHOST: '${RABBITMQ_VHOST}'
+            RABBITMQ_QUEUE: '${RABBITMQ_QUEUE}'
+        volumes:
+            - 'sail-rabbitmq:/var/lib/rabbitmq'
+        networks:
+            - appnet
+        healthcheck:
+            test:
+                - CMD
+                - rabbitmq-diagnostics
+                - '-q'
+                - ping
+            retries: 3
+            timeout: 5s
+    react-frontend:
+        build:
+            context: ./react-router-frontend-app
+            dockerfile: Dockerfile
+        image: 'react-frontend/app'
+        ports:
+            - "3000:3000"
+            - "5173:5173"
+        environment:
+            NODE_ENV: development
+        volumes:
+            - ./react-router-frontend-app:/app
+        networks:
+            - appnet
+        depends_on:
+            - laravel.test        
+networks:
+    appnet:
+        driver: bridge
+volumes:
+    sail-pgsql:
+        driver: local
+    sail-redis:
+        driver: local
+    sail-minio:
+        driver: local
+    sail-rabbitmq:
+        driver: local
