@@ -1,42 +1,28 @@
-site_name: Anchorless Tech Test Docs
-site_url: https://your-github-username.github.io/anchorless-tech-test/
-docs_dir: .
-repo_url: https://github.com/your-github-username/anchorless-tech-test
-repo_name: anchorless-tech-test
-nav:
-  - Home: context.md
-  - Multipart Upload: multipard-upload-direct-to-file-storage.md
+site_name: Anchorless Tech Test Documentation
+site_url: https://omar-karray.github.io/anchorless-tech-test/
 theme:
   name: material
-  features:
-    - navigation.tabs
-    - navigation.top
-    - content.code.annotate
+nav:
+  - Home: index.md
+  - Requirements: anchorless-test-requirements.md
+  - Context: context.md
+  - Data Model: data-model.md
+  - Multipart Upload Flow: multipard-upload-direct-to-file-storage.md
 markdown_extensions:
   - admonition
   - codehilite
   - toc:
       permalink: true
   - pymdownx.superfences
+  - pymdownx.markdownextradata
   - pymdownx.details
   - pymdownx.tabbed
+  - pymdownx.emoji
+  - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.emoji
-  - pymdownx.mark
-  - pymdownx.tasklist
-  - pymdownx.highlight
-  - pymdownx.keys
-  - pymdownx.magiclink
-  - pymdownx.betterem
   - pymdownx.caret
   - pymdownx.tilde
+  - pymdownx.mark
+  - pymdownx.tasklist
   - pymdownx.mermaid
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/your-github-username/anchorless-tech-test
-plugins:
-  - search
-  - mkdocs-material
-  - mkdocs-mermaid2-plugin
