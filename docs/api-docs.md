@@ -1,149 +1,157 @@
 # API Documentation
 
-This section describes the available API endpoints for the Anchorless VISA Dossier Upload feature, including authentication and visa application management.
+The Anchorless VISA Dossier API is JSON-only and every response is wrapped in the shared envelope:
 
----
-
-## Authentication Endpoints
-
-### POST `/api/auth/login`
-Authenticate a user and receive an access token.
-- **Body:**
-  - `email`: string
-  - `password`: string
-- **Response:**
-  - Success: `{ "data": { "token": "..." }, "errors": null }`
-  - Error: `{ "data": null, "errors": { ... } }`
-
----
-
-## Visa Application Endpoints
-
-### GET `/api/visa-applications`
-List all visa applications for the authenticated user.
-- **Response:**
-  - `{ "data": [ ...visa applications... ], "errors": null }`
-
-### POST `/api/visa-applications`
-Create a new visa application.
-- **Body:**
-  - `country`: string (ISO 3166-1 alpha-2)
-  - `status`: string (draft, submitted, approved, rejected)
-- **Response:**
-  - Success: `{ "data": { ...visa application... }, "errors": null }`
-
-### GET `/api/visa-applications/{id}`
-Get details of a specific visa application.
-- **Response:**
-  - `{ "data": { ...visa application... }, "errors": null }`
-
-### PUT `/api/visa-applications/{id}`
-Update a visa application.
-- **Body:**
-  - `country`: string
-  - `status`: string
-- **Response:**
-  - Success: `{ "data": { ...updated visa application... }, "errors": null }`
-
-### DELETE `/api/visa-applications/{id}`
-Delete a visa application.
-- **Response:**
-  - Success: `{ "data": { "deleted": true }, "errors": null }`
-
----
-
-## Visa Application File Endpoints
-
-### POST `/api/visa-applications/{id}/files`
-Upload a file to a visa application.
-- **Body:** Multipart form data
-  - `file`: PDF, PNG, or JPG (max 4MB)
-  - `file_category_id`: integer
-- **Response:**
-  - Success: `{ "data": { ...file metadata... }, "errors": null }`
-
-### GET `/api/visa-applications/{id}/files`
-List all files for a visa application.
-- **Response:**
-  - `{ "data": [ ...files... ], "errors": null }`
-
-### GET `/api/visa-applications/{id}/files/{file_id}`
-Get details of a specific file.
-- **Response:**
-  - `{ "data": { ...file metadata... }, "errors": null }`
-
-### PUT `/api/visa-applications/{id}/files/{file_id}`
-Update file metadata (e.g., category).
-- **Body:**
-  - `file_category_id`: integer
-- **Response:**
-  - Success: `{ "data": { ...updated file... }, "errors": null }`
-
-### DELETE `/api/visa-applications/{id}/files/{file_id}`
-Delete a file from a visa application.
-- **Response:**
-  - Success: `{ "data": { "deleted": true }, "errors": null }`
-
----
-
-## Response Format
-All responses use a JSON envelope:
 ```json
 { "data": { ... }, "errors": null }
 ```
-Or on error:
+
+Validation or server failures instead return:
+
 ```json
-{ "data": null, "errors": { "message": "Validation failed", "details": { ... } } }
+{
+  "data": null,
+  "errors": {
+    "message": "Validation failed",
+    "details": { "field": ["..."] }
+  }
+}
 ```
+
+All endpoints are guarded by `auth:sanctum`; include a bearer token in the `Authorization` header.
 
 ---
 
-## Example Auth Request
-```json
-POST /api/auth/login
-{
-  "email": "test@me.io",
-  "password": "password"
-}
-```
+## Visa Applications
 
-## Example Visa Application
-```json
-{
-  "id": 1,
-  "country": "FR",
-  "status": "draft",
-  "created_at": "2025-10-24T12:00:00Z",
-  "updated_at": "2025-10-24T12:00:00Z"
-}
-```
+### GET `/api/visa-applications`
+List the authenticated applicant’s visa applications.
+- **Response `200`**
+  ```json
+  {
+    "data": [
+      {
+        "id": 1,
+        "country": "FR",
+        "status": "draft",
+        "submitted_at": null,
+        "created_at": "2025-10-24T12:00:00Z",
+        "updated_at": "2025-10-24T12:00:00Z",
+        "files": [ { "...file metadata..." } ]
+      }
+    ],
+    "errors": null
+  }
+  ```
 
-## Example File Metadata
-```json
-{
-  "id": 1,
-  "visa_application_id": 1,
-  "file_category_id": 2,
-  "original_name": "passport.pdf",
-  "stored_name": "abc123.pdf",
-  "mime_type": "application/pdf",
-  "size_bytes": 102400,
-  "path": "files/abc123.pdf",
-  "disk": "local",
-  "created_at": "2025-10-24T12:00:00Z",
-  "updated_at": "2025-10-24T12:00:00Z"
-}
-```
+### POST `/api/visa-applications`
+Create a new visa application.
+- **Body**
+  - `country` (string, required, ISO 3166-1 alpha-2)
+  - `status` (string, optional, one of `draft`, `submitted`, `approved`, `rejected`)
+  - `submitted_at` (ISO 8601 datetime, optional)
+- **Response `201`** – newly created application with eager-loaded files list (initially empty).
 
-## Error Example
+### GET `/api/visa-applications/{visa_application}`
+Fetch a specific visa application that belongs to the authenticated user.
+- **Response `200`** – application payload identical to the list response item.
+- **Response `403/404`** – returned when the application does not belong to the user or cannot be found.
+
+### PUT `/api/visa-applications/{visa_application}`
+Update mutable metadata on an existing application.
+- **Body**
+  - `country` (string, optional)
+  - `status` (string, optional, same enum as above)
+  - `submitted_at` (ISO 8601 datetime, nullable)
+- **Response `200`** – updated application.
+
+### DELETE `/api/visa-applications/{visa_application}`
+Delete an application and any uploaded files associated with it.
+- **Response `200`**
+  ```json
+  { "data": { "deleted": true }, "errors": null }
+  ```
+
+---
+
+## Visa Files
+
+### GET `/api/visa-applications/{visa_application}/files`
+Return all uploaded files for the specified visa application (the path parameter must belong to the authenticated applicant).
+- **Response `200`**
+  ```json
+  {
+    "data": [
+      {
+        "id": 2,
+        "visa_application": { "id": 4, "country": "FR", "status": "submitted" },
+        "original_name": "passport.pdf",
+        "stored_name": "f23abcd.pdf",
+        "mime_type": "application/pdf",
+        "size_bytes": 102400,
+        "path": "visa-applications/4/files/f23abcd.pdf",
+        "disk": "local",
+        "category": { "id": 2, "name": "Passport", "slug": "passport" },
+        "created_at": "2025-10-24T12:05:00Z"
+      }
+    ],
+    "errors": null
+  }
+  ```
+
+### POST `/api/visa-applications/{visa_application}/files`
+Upload a dossier document for a specific visa application. The upload is accepted, stored temporarily, and queued for asynchronous processing; Horizon moves the file to its final location and broadcasts the result over Reverb.
+
+- **Body** (multipart/form-data)
+  - `file_category_id` (integer, required, must exist)
+  - `file` (required `PDF`, `PNG`, or `JPG`, max 4 MB)
+- **Response `202`**
+  ```json
+  {
+    "data": {
+      "message": "File upload queued for processing."
+    },
+    "errors": null
+  }
+  ```
+
+- **Broadcasts**
+  - `VisaApplicantFileStored` on `private-visa-applications.{visaApplicationId}` with payload:
+    ```json
+    {
+      "status": "stored",
+      "file": { "...VisaApplicantFileResource..." }
+    }
+    ```
+  - `VisaApplicantFileFailed` on the same channel when the queued job cannot complete:
+    ```json
+    {
+      "status": "failed",
+      "reason": "temporary_file_missing"
+    }
+    ```
+  Subscribe via Laravel Echo (Reverb driver) or any Pusher-compatible WebSocket client.
+
+### DELETE `/api/visa-applications/{visa_application}/files/{visa_applicant_file}`
+Delete an uploaded file that belongs to the authenticated applicant and the specified visa application.
+- **Response `200`**
+  ```json
+  { "data": { "deleted": true }, "errors": null }
+  ```
+
+---
+
+## Error Examples
+
+Failed validation always returns the shared error envelope:
+
 ```json
 {
   "data": null,
   "errors": {
     "message": "Validation failed",
     "details": {
-      "file": ["The file must be a PDF, PNG, or JPG."],
-      "file_category_id": ["The file category field is required."]
+      "file": ["The file must be a file of type: application/pdf, image/png, image/jpeg."]
     }
   }
 }

@@ -13,7 +13,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             FileCategoriesTableSeeder::class,
-            UsersTableSeeder::class,
+            //UsersTableSeeder::class,
         ]);
+
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(DatabaseTestSeeder::class);
+        }
     }
 }

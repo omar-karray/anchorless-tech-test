@@ -47,10 +47,21 @@ backend-tinker:
 backend-bash:
 	docker compose exec laravel.test bash
 
+app-configure: sync-env
+	docker compose exec laravel.test php artisan app:configure $(args)
+
+app-boot:
+	$(MAKE) services-up
+	$(MAKE) app-configure args="$(args)"
+
+app-reboot:
+	docker compose down -v --remove-orphans
+	$(MAKE) app-boot args="$(args)"
+
 # Frontend (React SSR) commands (add service when available)
 frontend-bash:
 	docker compose exec react-frontend bash
 frontend-sh:
 	docker compose exec react-frontend sh
 
-.PHONY: services-up services-down services-restart backend-migrate backend-artisan backend-composer backend-tinker backend-bash
+.PHONY: services-up services-down services-restart backend-migrate backend-artisan backend-composer backend-tinker backend-bash app-configure app-boot app-reboot

@@ -22,6 +22,15 @@ class VisaApplication extends Model
     ];
 
     /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'submitted_at' => 'datetime',
+    ];
+
+    /**
      * Get the applicant (user) for this visa application.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
