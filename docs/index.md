@@ -3,8 +3,6 @@
 Welcome to the Anchorless Tech Test documentation site!
 
 ## Contents
-- [Requirements](anchorless-test-requirements.md)
-- [Context](context.md)
 - [Data Model](data-model.md)
 - [Backend Setup & Operations](backend-setup.md)
 - [Backend Architecture](backend-architecture.md)

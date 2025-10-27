@@ -4,8 +4,6 @@ theme:
   name: material
 nav:
   - Home: index.md
-  - Requirements: anchorless-test-requirements.md
-  - Context: context.md
   - Data Model: data-model.md
   - Backend Setup: backend-setup.md
   - Backend Architecture: backend-architecture.md
