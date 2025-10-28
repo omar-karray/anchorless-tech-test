@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+set -e
+
+APP_ROOT="/app"
+
+if [ ! -f "$APP_ROOT/.env" ] && [ -f "$APP_ROOT/.env.example" ]; then
+  echo "[frontend] Copying .env.example to .env"
+  cp "$APP_ROOT/.env.example" "$APP_ROOT/.env"
+fi
+
+exec "$@"

@@ -63,6 +63,7 @@ Horizon and Reverb start automatically when you bring up the stack.
 ## Environment Notes
 
 - `laravel-backend-api/.env.example` is copied to `.env` at container start if the file is missing. Adjust `.env` once and it will be reused on subsequent boots.
+- The `react-frontend` container launches via `docker/start-container`, which copies `.env.example` to `.env` if the file is missing before executing the Node command. The frontend dev server always has the correct Reverb credentials without extra steps.
 - `.env` already contains Reverb credentials. Frontend clients connect via `ws://localhost:8080` (development) using the `REVERB_APP_KEY`.
 - MinIO credentials default to `sail` / `password`. The bucket is named `uploads`.
 

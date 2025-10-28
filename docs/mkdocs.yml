@@ -4,11 +4,15 @@ theme:
   name: material
 nav:
   - Home: index.md
+  - Getting Started: getting-started.md
   - Data Model: data-model.md
   - Backend Setup: backend-setup.md
   - Backend Architecture: backend-architecture.md
+  - Frontend Auth: frontend-auth.md
   - Multipart Upload Flow: multipard-upload-direct-to-file-storage.md
   - API Documentation: api-docs.md
+  - Frontend Realtime: frontend-realtime.md
+  - Troubleshooting: troubleshooting.md
 markdown_extensions:
   - admonition
   - codehilite

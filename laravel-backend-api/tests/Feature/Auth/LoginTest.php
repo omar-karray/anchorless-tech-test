@@ -6,16 +6,17 @@ use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
 
-it('authenticates a user with valid credentials', function (): void {
+it('creates an API token with valid credentials', function (): void {
     $password = 'secret-123';
 
     $user = User::factory()->create([
         'password' => bcrypt($password),
     ]);
 
-    $response = postJson('/api/auth/login', [
+    $response = postJson('/api/auth/token/create', [
         'email' => $user->email,
         'password' => $password,
+        'device_name' => 'pest-tests',
     ]);
 
     $response->assertOk()
@@ -40,14 +41,15 @@ it('authenticates a user with valid credentials', function (): void {
     expect($response->json('data.token'))->toBeString()->not->toBeEmpty();
 });
 
-it('rejects invalid credentials', function (): void {
+it('rejects invalid credentials for token creation', function (): void {
     $user = User::factory()->create([
         'password' => bcrypt('correct-password'),
     ]);
 
-    $response = postJson('/api/auth/login', [
+    $response = postJson('/api/auth/token/create', [
         'email' => $user->email,
         'password' => 'wrong-password',
+        'device_name' => 'pest-tests',
     ]);
 
     $response->assertStatus(401)

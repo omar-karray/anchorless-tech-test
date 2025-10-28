@@ -18,5 +18,8 @@ FROM node:20-alpine
 COPY ./package.json package-lock.json /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
+COPY ./docker/start-container /usr/local/bin/start-container
 WORKDIR /app
+RUN chmod +x /usr/local/bin/start-container
+ENTRYPOINT ["start-container"]
 CMD ["npm", "run", "start"]

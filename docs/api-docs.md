@@ -18,7 +18,11 @@ Validation or server failures instead return:
 }
 ```
 
-All endpoints are guarded by `auth:sanctum`; include a bearer token in the `Authorization` header.
+Most endpoints are guarded by `auth:sanctum` and accept either:
+- Cookie session (SPA via Laravel Sanctum's stateful sessions)
+- Bearer token (Sanctum Personal Access Token)
+
+See the Authentication section below for both flows.
 
 ---
 
@@ -138,6 +142,31 @@ Delete an uploaded file that belongs to the authenticated applicant and the spec
   ```json
   { "data": { "deleted": true }, "errors": null }
   ```
+
+---
+
+## Authentication
+
+There are two supported auth modes.
+
+- SPA Cookie Session (first-party)
+  1) Initialize CSRF: `GET /sanctum/csrf-cookie`
+  2) Login: `POST /login` with JSON `{ "email", "password" }`
+     - The server sets `XSRF-TOKEN` and the session cookie. Your HTTP client must send `credentials: include` and the `X-XSRF-TOKEN` header whose value is the URL-decoded `XSRF-TOKEN` cookie.
+  3) Auth check: `GET /api/auth/me` returns the authenticated user. This endpoint works with session cookies and tokens.
+  4) Logout: `POST /logout`
+
+- Token (Personal Access Tokens)
+  1) Create token: `POST /api/auth/token/create` with JSON `{ "email", "password", "device_name" }`
+     - Response contains `data.token` and `data.user`.
+  2) Use the token: add `Authorization: Bearer <token>` to requests against `/api/*`.
+  3) Revoke token: `POST /api/auth/token/revoke` (with the same `Authorization: Bearer <token>` header).
+  4) Optional token-only check: `GET /api/auth/me-token` validates only the Bearer token (no session fallback). Intended for tests and third-party tooling; SPA does not use this.
+
+Notes
+- CORS: `config/cors.php` enables credentials and whitelists dev origins (`http://localhost:5173`, etc.). Paths include `api/*`, `sanctum/csrf-cookie`, `login`, `logout`.
+- Stateful domains: `config/sanctum.php` includes localhost/127.0.0.1 dev ports so SPA cookies authenticate.
+- SSR: The frontend uses a server-side API base (`VITE_API_BASE_URL_SERVER`) so loaders can reach the Laravel container during SSR. Requests forward `Cookie`, `Origin`, and `Referer` headers to keep Sanctum “stateful”.
 
 ---
 
