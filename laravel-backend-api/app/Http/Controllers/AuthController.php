@@ -44,20 +44,10 @@ class AuthController extends BaseApiController
      */
     public function logout(Request $request)
     {
-        \Log::info('Logout called', [
-            'user_id' => $request->user()?->id,
-            'session_id' => $request->session()->getId(),
-        ]);
-
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        \Log::info('After logout', [
-            'auth_check' => Auth::check(),
-            'session_id' => $request->session()->getId(),
-        ]);
 
         // Clear the session cookie
         $response = $this->apiSuccess([
@@ -73,13 +63,6 @@ class AuthController extends BaseApiController
      */
     public function me(Request $request)
     {
-        \Log::info('/auth/me called', [
-            'auth_check' => Auth::check(),
-            'user_id' => $request->user()?->id,
-            'session_id' => $request->session()->getId(),
-            'has_session_cookie' => $request->hasCookie(config('session.cookie')),
-        ]);
-
         $user = $request->user();
 
         if (!$user) {

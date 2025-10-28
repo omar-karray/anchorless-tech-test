@@ -93,6 +93,13 @@ No PHP, Composer, or Node.js installation required—everything runs in containe
 - ✅ Read-only view for submitted applications
 - ✅ Comprehensive authentication with session management
 
+!!! note "File Upload Architecture"
+    This implementation uploads files through Laravel to MinIO S3, with the upload process queued via Laravel Horizon. Queue results are broadcast to the frontend in real-time using Laravel Reverb (WebSocket) and Echo client.
+    
+    **This satisfies the assessment requirements**, but note that in production environments, the recommended approach is **direct multipart upload from frontend to S3/MinIO** using pre-signed URLs, with Laravel acting as the orchestrator for issuing signed URLs and tracking upload completion.
+    
+    📖 Learn more: [AWS S3 Pre-Signed URLs Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html)
+
 ## Development Workflow
 
 ### Making Changes

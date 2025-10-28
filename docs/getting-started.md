@@ -204,6 +204,28 @@ For each category:
 !!! tip "Real-time Updates"
     File uploads are processed in the background. You'll receive real-time notifications via WebSocket when processing completes!
 
+!!! info "File Upload Architecture"
+    **Current Implementation (Assessment Compliance):**
+    
+    This application uploads files through the Laravel backend to MinIO S3 storage. The upload process is queued using Laravel Horizon, and results are broadcast to the frontend in real-time via Laravel Reverb (WebSocket server) and Echo (WebSocket client).
+    
+    **Production Best Practice:**
+    
+    In production environments, the recommended approach is **direct multipart upload from frontend to S3/MinIO** using pre-signed URLs. In this architecture:
+    
+    - Frontend requests a pre-signed URL from Laravel
+    - Laravel generates a signed URL with upload permissions
+    - Frontend uploads directly to S3/MinIO (bypassing Laravel)
+    - Frontend notifies Laravel when upload completes
+    - Laravel validates and processes the file metadata
+    
+    This approach reduces server load, improves upload speeds, and handles large files more efficiently.
+    
+    📖 **Learn More:**
+    
+    - [AWS S3 Pre-Signed URLs Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html)
+    - [MinIO Pre-Signed URLs Guide](https://min.io/docs/minio/linux/developers/go/API.html#presignedputobject)
+
 ### Submit Application
 
 Once all 4 categories have at least one file:
