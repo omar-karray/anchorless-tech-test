@@ -2,7 +2,10 @@
 
 # Docker lifecycle ---------------------------------------------------------
 
-services-up:
+frontend-host-install:
+	cd react-router-frontend-app && npm install
+
+services-up: frontend-host-install
 	docker compose up -d --build
 
 services-down:
