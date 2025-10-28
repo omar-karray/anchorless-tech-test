@@ -1,12 +1,8 @@
 # Anchorless Tech Test Makefile
 
-# Link backend .env into project root so other tools can reference it.
-sync-env:
-	ln -sf laravel-backend-api/.env .env
-
 # Docker lifecycle ---------------------------------------------------------
 
-services-up: sync-env
+services-up:
 	docker compose up -d --build
 
 services-down:
@@ -15,7 +11,7 @@ services-down:
 service-restart-%:
 	docker compose restart $*
 
-app-configure: sync-env
+app-configure:
 	docker compose exec laravel.test php artisan app:configure $(args)
 
 app-boot:
