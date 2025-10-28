@@ -26,16 +26,55 @@ make app-boot
 
 ### First Login
 
-After setup completes, visit **http://localhost:3000** and log in with:
+After setup completes, visit **http://localhost:3000** and log in with one of the demo accounts:
 
-- **Email:** `test@example.com`
+**Demo User 1:**
+- **Email:** `demo@anchorless.dev`
 - **Password:** `password`
+- Has a submitted application (France)
+
+**Demo User 2:**
+- **Email:** `example@anchorless.dev`
+- **Password:** `password`
+- Has a draft application (Canada)
+
+## Screenshots
+
+### Login Screen
+![Login](screenshots/login-screen-1.png)
+
+### Dashboard - Application List
+![Dashboard](screenshots/list-all-applications.png)
+
+### Create New Application
+![Create Application](screenshots/visa-application-add.png)
+
+### Edit Application - File Upload with Real-time Updates
+![Edit with Upload](screenshots/visa-application-edit.png)
+
+Upload files with drag & drop support and watch real-time WebSocket notifications:
+
+![Upload Progress](screenshots/visa-applcaition-upload.png)
+
+### Submit Confirmation
+![Submit Modal](screenshots/visa-application-submit.png)
+
+### View Submitted Application (Read-only)
+![View Submitted](screenshots/visa-application-view.png)
+
+### Background Processing
+
+**Queue Management with Horizon:**
+![Horizon Dashboard](screenshots/horizon-job.png)
+
+**Email Notifications:**
+![Confirmation Email](screenshots/confirmation-email.png)
 
 ## Access Points
 
 | Service | URL | Description | Credentials |
 | --- | --- | --- | --- |
-| **Frontend** | http://localhost:3000 | React Router v7 application (production build) | test@example.com / password |
+| **Frontend** | http://localhost:3000 | React Router v7 application (production build) | demo@anchorless.dev / password |
 | **API** | http://localhost | Laravel REST API | Same as frontend |
 | **Horizon** | http://localhost/horizon | Queue monitoring dashboard | — |
 | **MinIO Console** | http://localhost:8900 | S3 storage management | sail / password |
@@ -98,7 +137,6 @@ No PHP, Composer, or Node.js installation required—everything runs in containe
     
     **This satisfies the assessment requirements**, but note that in production environments, the recommended approach is **direct multipart upload from frontend to S3/MinIO** using pre-signed URLs, with Laravel acting as the orchestrator for issuing signed URLs and tracking upload completion.
     
-    📖 Learn more: [AWS S3 Pre-Signed URLs Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html)
 
 ## Development Workflow
 

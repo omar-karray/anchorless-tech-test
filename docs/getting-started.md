@@ -51,7 +51,7 @@ make app-boot
        - Sets up access credentials
     6. ✅ **Runs database migrations** - Prompts: "Run migrate:fresh --seed?" → Press `Y`
        - Creates all database tables
-       - Seeds test user (`test@example.com` / `password`)
+       - Seeds test user (`demo@anchorless.dev` / `password`)
        - Seeds file categories (Passport, Visa Form, ID Photo, Proof of Address)
     7. ✅ **Runs test suite** - Prompts: "Run tests now?" → Press `N` (optional, can skip)
     
@@ -67,10 +67,17 @@ This process is **fully automated** - just answer `Y` to the prompts (or use `ma
 
 ### Step 3: Log In
 
-Once the build completes, visit **http://localhost:3000** in your browser and log in with:
+Once the build completes, visit **http://localhost:3000** in your browser and log in with one of the demo accounts:
 
-- **Email:** `test@example.com`
+**Demo User 1:**
+- **Email:** `demo@anchorless.dev`
 - **Password:** `password`
+- Has a **submitted application** for France with uploaded documents
+
+**Demo User 2:**
+- **Email:** `example@anchorless.dev`
+- **Password:** `password`
+- Has a **draft application** for Canada with one document
 
 You'll be redirected to the dashboard where you can create and manage visa applications.
 
@@ -106,7 +113,7 @@ Once the setup completes, open your browser:
 🌐 **Frontend Application:** [http://localhost:3000](http://localhost:3000)
 
 !!! info "Default Login Credentials"
-    - **Email:** `test@example.com`
+    - **Email:** `demo@anchorless.dev`
     - **Password:** `password`
 
 ## Additional Access Points
@@ -115,7 +122,7 @@ While developing, you may need access to these services:
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| **Frontend App** | http://localhost:3000 | test@example.com / password |
+| **Frontend App** | http://localhost:3000 | demo@anchorless.dev / password |
 | **Backend API** | http://localhost/api | - |
 | **MinIO Console** | http://localhost:9001 | sail / password |
 
@@ -178,7 +185,7 @@ Now that your application is running, here's what you can do:
 
 ### Create Your First Visa Application
 
-1. **Login** at http://localhost:3000 with `test@example.com` / `password`
+1. **Login** at http://localhost:3000 with `demo@anchorless.dev` / `password`
 2. Click **"+ New Application"** button
 3. **Select a country** (Portugal, Spain, or Italy)
 4. Click **"Create Application"**
