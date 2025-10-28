@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Copy environment files
+        run: |
+          cp laravel-backend-api/.env.example laravel-backend-api/.env
+          cp react-router-frontend-app/.env.example react-router-frontend-app/.env
+      
+      - name: Start Docker services
+        run: make services-up
+      
+      - name: Wait for services to be ready
+        run: sleep 30
+      
+      - name: Configure application
+        run: make app-configure args="--yes"
+      
+      - name: Run tests
+        run: make backend-artisan cmd="test"
+      
+      - name: Display logs on failure
+        if: failure()
+        run: |
+          echo "=== Laravel Logs ==="
+          docker compose logs laravel.test --tail=100
+          echo "=== PostgreSQL Logs ==="
+          docker compose logs pgsql --tail=50
+          echo "=== Redis Logs ==="
+          docker compose logs redis --tail=50
+      
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

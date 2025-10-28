@@ -1,5 +1,7 @@
 # Anchorless Tech Test – Visa Application System
 
+![Tests](https://github.com/omar-karray/anchorless-tech-test/actions/workflows/tests.yml/badge.svg)
+
 ## Overview
 
 This repository contains a full-stack visa application management system with a Laravel 12 API backend and React Router v7 SSR frontend. The project is fully containerized with Docker Compose and includes automated setup via Makefile commands. Features include real-time file uploads via WebSockets (Laravel Reverb), background job processing (Horizon), and S3-compatible storage (MinIO).
