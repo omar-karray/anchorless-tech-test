@@ -22,6 +22,13 @@ if [ ! -f "${project_root}/.env" ] && [ -f "${project_root}/.env.example" ]; the
     cp "${project_root}/.env.example" "${project_root}/.env"
 fi
 
+# Ensure composer dependencies are installed before starting supervisord
+if [ ! -d "${project_root}/vendor" ]; then
+    echo "Installing Composer dependencies..."
+    cd "${project_root}"
+    composer install --no-interaction --optimize-autoloader
+fi
+
 if [ $# -gt 0 ]; then
     if [ "$SUPERVISOR_PHP_USER" = "root" ]; then
         exec "$@"
