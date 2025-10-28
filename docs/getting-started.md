@@ -65,7 +65,38 @@ make app-boot
 
 This process is **fully automated** - just answer `Y` to the prompts (or use `make app-boot args="--yes"` to skip prompts).
 
-### Step 3: Access the Application
+### Step 3: Log In
+
+Once the build completes, visit **http://localhost:5173** in your browser and log in with:
+
+- **Email:** `test@example.com`
+- **Password:** `password`
+
+You'll be redirected to the dashboard where you can create and manage visa applications.
+
+### Step 4: Explore the Application
+
+Now you can:
+
+- **Create a new application** - Click "New Application", select a country (Portugal, Spain, or Italy)
+- **Upload documents** - Drag & drop files or click to upload for each required category:
+  - Passport
+  - Visa Form
+  - ID Photo
+  - Proof of Address
+- **Watch real-time updates** - File uploads process in the background with live WebSocket notifications
+- **Submit application** - Once all 4 categories have files, click "Submit Application"
+- **View submitted applications** - Access read-only view of submitted applications
+
+!!! tip "Demo Features to Try"
+    - Upload a file and watch it appear instantly via WebSocket
+    - Try drag & drop on the file upload zones
+    - Monitor queue processing at http://localhost/horizon
+    - Check MinIO storage at http://localhost:8900 (minioadmin / minioadmin)
+
+## Service URLs
+
+### Step 4: Explore the Application
 
 Once the setup completes, open your browser:
 

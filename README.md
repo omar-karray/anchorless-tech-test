@@ -1,112 +1,216 @@
-# Anchorless Tech Test – Backend Guide
+# Anchorless Tech Test – Visa Application System
 
 ## Overview
 
-This repository contains the Laravel API that powers the Anchorless technical test. The project is containerised (Docker Compose) and ships with Makefile helpers that automate the full bootstrap: installing Composer dependencies, configuring MinIO, refreshing the database, running the test suite, and clearing caches. Horizon processes queued jobs, while Laravel Reverb handles real-time broadcasting (file uploads, notifications, etc.).
+This repository contains a full-stack visa application management system with a Laravel 12 API backend and React Router v7 SSR frontend. The project is fully containerized with Docker Compose and includes automated setup via Makefile commands. Features include real-time file uploads via WebSockets (Laravel Reverb), background job processing (Horizon), and S3-compatible storage (MinIO).
+
+## Quick Start
+
+```bash
+git clone https://github.com/omar-karray/anchorless-tech-test.git
+cd anchorless-tech-test
+make app-boot
+```
+
+**That's it!** The command will:
+- Start all Docker containers (Laravel, PostgreSQL, Redis, MinIO, Reverb, Horizon, React Frontend)
+- Install Composer and npm dependencies
+- Configure MinIO storage (press `Y` when prompted)
+- Run database migrations and seed test data (press `Y` when prompted)
+- Build the React frontend
+- Start all services
+
+**First run takes 3-5 minutes.** Subsequent runs are faster.
+
+### First Login
+
+After setup completes, visit **http://localhost:5173** and log in with:
+
+- **Email:** `test@example.com`
+- **Password:** `password`
+
+## Access Points
+
+| Service | URL | Description |
+| --- | --- | --- |
+| **Frontend** | http://localhost:5173 | React Router v7 application |
+| **API** | http://localhost | Laravel REST API |
+| **Horizon** | http://localhost/horizon | Queue monitoring dashboard |
+| **MinIO Console** | http://localhost:8900 | S3 storage management |
+| **Mailpit** | http://localhost:8025 | Email testing UI |
+
+WebSocket server runs on `ws://localhost:8080` (Reverb).
 
 ## Prerequisites
 
-- Docker Desktop (or Docker Engine) with Docker Compose.
-- GNU Make (ships with macOS/Linux; Windows users can leverage WSL2).
-- Node.js only if you plan to run the React frontend (optional).
+- **Docker Desktop** (or Docker Engine with Docker Compose)
+- **GNU Make** (included on macOS/Linux; Windows users need WSL2)
+- **Git**
 
-No global PHP or Composer installation is required—the containers take care of it.
+No PHP, Composer, or Node.js installation required—everything runs in containers.
 
-## Installation / First-Time Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/<your-org>/anchorless-tech-test.git
-   cd anchorless-tech-test
-   ```
-
-2. **Bootstrap everything**
-   ```bash
-   make app-boot args="--yes --recreate-minio"
-   ```
-
-   This command performs the following:
-
-   - Builds and starts the Docker stack (`make services-up`).
-   - Runs `php artisan app:configure` inside the Laravel container, which:
-     1. Runs `composer install` (idempotent).
-     2. Configures MinIO and optionally recreates the bucket.
-     3. Executes `migrate:fresh --seed`.
-     4. Runs the full test suite.
-     5. Clears caches (`optimize:clear`).
-
-   Omit `--yes` if you prefer to confirm each step interactively. Drop `--recreate-minio` if you already trust the bucket state.
-
-3. **Access the stack**
-   - API: http://localhost (served by `laravel.test`)
-   - Horizon dashboard: http://localhost/horizon (once you configure auth, if necessary)
-   - Reverb WebSocket server: ws://localhost:8080
-   - Mailpit UI: http://localhost:8025
-
-## Daily Workflow
+## Common Commands
 
 | Command | Description |
 | --- | --- |
-| `make services-up` | Start or rebuild the containers without running the configuration workflow. |
-| `make app-configure args="--yes"` | Rerun the configure script (composer install, MinIO, migrations, tests, cache clear). |
-| `make app-configure args="--yes --recreate-minio"` | Same as above but forces MinIO bucket recreation. |
-| `make app-boot args="--yes"` | Full bootstrap without cleaning volumes (useful for fresh workspaces). |
-| `make app-reboot args="--yes"` | Stop containers, remove volumes, and run `make app-boot` (clean slate). |
-| `make services-down` | Stop and remove the containers, preserving volumes. |
-| `make backend-artisan cmd="queue:failed"` | Execute any Artisan command in the Laravel container. |
-| `make backend-bash` | Open a shell inside the `laravel.test` container. |
-| `make service-restart-reverb` | Restart an individual service (replace `reverb` with any service name). |
+| `make app-boot` | **Complete setup** - starts containers, installs dependencies, configures services, builds frontend |
+| `make app-reboot` | **Clean restart** - stops everything, removes volumes, and runs `app-boot` (fresh start) |
+| `make services-up` | Start/rebuild Docker containers only (no configuration) |
+| `make services-down` | Stop containers but preserve data volumes |
+| `make app-configure` | Rerun backend configuration (MinIO, migrations, tests, cache) |
+| `make frontend-build` | Rebuild React frontend (after code changes) |
+| `make backend-artisan cmd="..."` | Run any Laravel Artisan command |
+| `make backend-bash` | Open shell in Laravel container |
 
-All `make` commands accept optional `args="..."` where noted.
+**Interactive prompts:** By default, `make app-boot` will ask for confirmation before configuring MinIO and running migrations. To skip prompts, use `make app-boot args="--yes"`.
 
-## Services & Ports
+## Architecture
 
-| Service | Purpose | Ports |
-| --- | --- | --- |
-| `laravel.test` | Laravel application (PHP-FPM + nginx) | 80 |
-| `horizon` | Queue worker supervisor | — |
-| `reverb` | WebSocket server (Laravel Reverb) | 8080 |
-| `pgsql` | PostgreSQL database | 5432 |
-| `redis` | Redis for queues/cache | 6379 |
-| `minio` | S3-compatible file storage | 9000 (API), 8900 (console) |
-| `mailpit` | SMTP capture & web UI | 1025 (SMTP), 8025 (UI) |
-| `react-frontend` | React SSR frontend (optional) | 3000 / 5173 |
+### Backend (Laravel 12)
+- **Authentication:** Laravel Sanctum (cookie-based sessions)
+- **WebSockets:** Laravel Reverb on port 8080 for real-time updates
+- **Queue Processing:** Horizon with Redis backend
+- **Storage:** MinIO (S3-compatible) for file uploads
+- **Database:** PostgreSQL
+- **Email Testing:** Mailpit
 
-## Database & Seeders
+### Frontend (React Router v7)
+- **Server-Side Rendering (SSR)** with client-side hydration
+- **Real-time Updates:** Echo client with Pusher protocol
+- **Features:** Drag & drop file upload, per-category loading states, WebSocket notifications
 
-- `DatabaseTestSeeder` populates a baseline set of users, visa applications, and files for testing. It runs automatically during `app:configure`.
-- To reseed manually: `make backend-artisan cmd="db:seed --class=Database\\Seeders\\DatabaseTestSeeder"`.
+### Key Features
+- ✅ Real-time file upload progress via WebSocket events
+- ✅ Background job processing with queue monitoring
+- ✅ Drag & drop file uploads with instant feedback
+- ✅ Submit validation (requires all 4 document categories)
+- ✅ Read-only view for submitted applications
+- ✅ Comprehensive authentication with session management
 
-## Queues & Real-Time Updates
+## Development Workflow
 
-- Queued jobs are processed via Horizon (`php artisan horizon`) in the dedicated container. File uploads are enqueued, and both success (`VisaApplicantFileStored`) and failure (`VisaApplicantFileFailed`) events broadcast over Reverb to the channel `private-visa-applications.{visaApplicationId}`.
-- Ensure the Reverb server is running (`docker compose logs -f reverb`) when testing broadcasting. Clients should connect using the keys defined in `.env` / `.env.example`.
+### Making Changes
 
-## Tests
+**Backend changes:**
+```bash
+make backend-artisan cmd="migrate"           # Run migrations
+make backend-artisan cmd="db:seed"           # Seed database
+make backend-artisan cmd="test"              # Run tests
+make backend-bash                             # Access container shell
+```
 
-The configure workflow already runs the full suite. Re-run as needed:
+**Frontend changes:**
+```bash
+make frontend-build                           # Rebuild after code changes
+docker compose restart react-frontend         # Restart frontend container
+```
 
-- `make backend-artisan cmd="test"` – uses Laravel’s `artisan test`.
-- `docker compose exec laravel.test ./vendor/bin/pest` – directly run Pest if you prefer.
+### Database & Seeders
 
-Feature tests cover authentication, visa applications, and visa applicant file flows, while unit tests assert queued upload behaviour.
+- **Test data** is automatically seeded during `make app-boot`
+- **Default user:** test@example.com / password
+- **File categories:** Passport, Visa Form, ID Photo, Proof of Address
+- Manual reseed: `make backend-artisan cmd="db:seed --class=Database\\Seeders\\DatabaseTestSeeder"`
 
-## API Documentation
+### Real-Time Features
 
-- Source markdown lives under `docs/` (e.g. `docs/api-docs.md`, `docs/index.md`).
-- To preview the docs with MkDocs:
-  ```bash
-  cd docs
-  mkdocs serve
-  ```
-  Then visit http://127.0.0.1:8000 (requires local MkDocs installation).
-- When working without MkDocs, read the markdown files directly; they contain request/response examples and endpoint descriptions.
+File uploads are processed asynchronously:
+1. File uploaded to MinIO via queue job
+2. Success/failure events broadcast via Reverb
+3. Frontend receives WebSocket updates
+4. UI updates in real-time (no page refresh)
 
-## Troubleshooting & Reset
+Monitor queues: http://localhost/horizon
 
-- `make app-reboot args="--yes"` – complete reset (containers + volumes) followed by a full bootstrap.
-- `make services-down` – stop containers but keep volumes (database, MinIO data, etc.).
-- Ensure Docker Desktop is running before invoking Make targets.
-- For pending Composer issues, run `make backend-composer cmd="install"` to inspect output manually.
+## Testing
 
-This documentation should keep the Anchorless team productive and aligned when onboarding or revisiting the backend. Reach out in the project channel if you hit unexpected issues. Happy coding!
+Tests run automatically during `make app-boot`. To run manually:
+
+```bash
+make backend-artisan cmd="test"                    # Full test suite
+make backend-artisan cmd="test --filter=Auth"      # Specific tests
+docker compose exec laravel.test ./vendor/bin/pest # Direct Pest runner
+```
+
+Test coverage includes:
+- Authentication flows (login, logout, session management)
+- Visa application CRUD operations
+- File upload queue jobs and broadcasting events
+- WebSocket authorization policies
+
+## Documentation
+
+Full documentation is available in the `docs/` directory:
+
+- **[Getting Started](docs/getting-started.md)** - Complete setup guide with troubleshooting
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
+- **[Technical Documentation](DOCUMENTATION.md)** - Architecture deep dive
+
+To view with MkDocs (optional):
+```bash
+cd mkdocs
+mkdocs serve  # Visit http://127.0.0.1:8000
+```
+
+## Troubleshooting
+
+**Containers won't start:**
+```bash
+docker compose down -v      # Remove all volumes
+make app-reboot             # Fresh start
+```
+
+**Port already in use:**
+```bash
+lsof -ti:80 | xargs kill   # Kill process on port 80 (macOS/Linux)
+# or change ports in docker-compose.yml
+```
+
+**Frontend not updating:**
+```bash
+make frontend-build                    # Rebuild assets
+docker compose restart react-frontend  # Restart container
+```
+
+**Database connection issues:**
+```bash
+docker compose logs pgsql              # Check PostgreSQL logs
+make backend-artisan cmd="migrate:fresh --seed"  # Reset database
+```
+
+For more issues, see [docs/troubleshooting.md](docs/troubleshooting.md).
+
+## Project Structure
+
+```
+anchorless-tech-test/
+├── laravel-backend-api/       # Laravel 12 API
+│   ├── app/
+│   ├── routes/
+│   ├── tests/
+│   └── docker/                # Docker configuration
+├── react-router-frontend-app/ # React Router v7 frontend
+│   ├── app/
+│   │   ├── routes/           # Page routes
+│   │   └── lib/              # API client, auth, WebSocket
+│   └── docker/                # Docker configuration
+├── docs/                      # MkDocs documentation
+├── Makefile                   # Automation commands
+└── docker-compose.yml         # Service orchestration
+```
+
+## Contributing
+
+1. Create a feature branch from `main`
+2. Make changes and add tests
+3. Run `make backend-artisan cmd="test"` to verify
+4. Rebuild frontend with `make frontend-build`
+5. Submit pull request
+
+## License
+
+This project is proprietary and confidential. Unauthorized copying or distribution is prohibited.
+
+---
+
+**Need help?** Check the documentation in `docs/` or contact the development team.
