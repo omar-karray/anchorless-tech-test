@@ -1,5 +1,5 @@
 import { Outlet, redirect, useLoaderData, Form, useNavigate } from "react-router";
-import type { LoaderFunctionArgs } from "./+types/dashboard";
+import type { LoaderFunctionArgs } from "react-router";
 import { apiFetch } from "../lib/api-client";
 import { clearSession, saveUser, type AuthUser } from "../lib/auth-storage";
 import { useEffect, useState, type FormEvent } from "react";
@@ -37,7 +37,7 @@ export default function DashboardLayout() {
   }, [needsLogin, redirectTo, navigate]);
   const [isMenuOpen, setMenuOpen] = useState(false);
 
-  if (needsLogin) {
+  if (needsLogin || !user) {
     return <div className="p-6 text-slate-600">Redirecting to sign in…</div>;
   }
 

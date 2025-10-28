@@ -1,4 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { apiFetch } from "../lib/api-client";
 
 type FileCategory = {
