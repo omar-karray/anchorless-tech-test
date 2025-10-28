@@ -30,21 +30,40 @@ cd anchorless-tech-test
 
 ### Step 2: Start the Application
 
-This single command will set up everything:
+This single command will set up everything automatically:
 
 ```bash
 make app-boot
 ```
 
 !!! success "What happens during `make app-boot`"
-    1. ✅ Starts all Docker containers (Laravel, PostgreSQL, Redis, MinIO, Reverb, Horizon)
-    2. ✅ Configures the Laravel backend
-    3. ✅ Runs database migrations
-    4. ✅ Seeds initial data (test user and file categories)
-    5. ✅ Installs and builds frontend assets
-    6. ✅ All services are ready to use!
+    **Phase 1: Environment Setup**
+    
+    1. ✅ **Copies `.env` files** - Backend and frontend `.env.example` → `.env` (automatic on first run)
+    2. ✅ **Starts Docker containers** - Laravel, PostgreSQL, Redis, MinIO, Reverb, Horizon, Frontend
+    3. ✅ **Builds images** - Compiles all Docker services with latest code
+    
+    **Phase 2: Backend Configuration (Interactive)**
+    
+    4. ✅ **Installs Composer dependencies** - PHP packages for Laravel
+    5. ✅ **Configures MinIO** - Prompts: "Configure MinIO now?" → Press `Y`
+       - Creates S3-compatible storage bucket
+       - Sets up access credentials
+    6. ✅ **Runs database migrations** - Prompts: "Run migrate:fresh --seed?" → Press `Y`
+       - Creates all database tables
+       - Seeds test user (`test@example.com` / `password`)
+       - Seeds file categories (Passport, Visa Form, ID Photo, Proof of Address)
+    7. ✅ **Runs test suite** - Prompts: "Run tests now?" → Press `N` (optional, can skip)
+    
+    **Phase 3: Frontend Build**
+    
+    8. ✅ **Installs npm dependencies** - React Router v7 and all packages
+    9. ✅ **Builds production bundle** - Vite compilation (~4 seconds)
+    10. ✅ **Restarts frontend container** - Serves the latest build
+    
+    **Total Time: 3-5 minutes on first run** (faster on subsequent runs)
 
-This process typically takes **3-5 minutes** on first run (faster on subsequent runs).
+This process is **fully automated** - just answer `Y` to the prompts (or use `make app-boot args="--yes"` to skip prompts).
 
 ### Step 3: Access the Application
 
