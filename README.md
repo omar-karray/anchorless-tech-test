@@ -24,22 +24,26 @@ make app-boot
 
 ### First Login
 
-After setup completes, visit **http://localhost:5173** and log in with:
+After setup completes, visit **http://localhost:3000** and log in with:
 
 - **Email:** `test@example.com`
 - **Password:** `password`
 
 ## Access Points
 
-| Service | URL | Description |
-| --- | --- | --- |
-| **Frontend** | http://localhost:5173 | React Router v7 application |
-| **API** | http://localhost | Laravel REST API |
-| **Horizon** | http://localhost/horizon | Queue monitoring dashboard |
-| **MinIO Console** | http://localhost:8900 | S3 storage management |
-| **Mailpit** | http://localhost:8025 | Email testing UI |
+| Service | URL | Description | Credentials |
+| --- | --- | --- | --- |
+| **Frontend** | http://localhost:3000 | React Router v7 application (production build) | test@example.com / password |
+| **API** | http://localhost | Laravel REST API | Same as frontend |
+| **Horizon** | http://localhost/horizon | Queue monitoring dashboard | — |
+| **MinIO Console** | http://localhost:8900 | S3 storage management | sail / password |
+| **Mailpit** | http://localhost:8025 | Email testing UI | — |
 
 WebSocket server runs on `ws://localhost:8080` (Reverb).
+
+!!! note "Development vs Production"
+    - **http://localhost:3000** - Production build served by the container (use after `make app-boot`)
+    - **http://localhost:5173** - Development server with hot reload (use with `npm run dev`)
 
 ## Prerequisites
 

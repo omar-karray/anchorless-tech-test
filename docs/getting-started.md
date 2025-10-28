@@ -67,12 +67,15 @@ This process is **fully automated** - just answer `Y` to the prompts (or use `ma
 
 ### Step 3: Log In
 
-Once the build completes, visit **http://localhost:5173** in your browser and log in with:
+Once the build completes, visit **http://localhost:3000** in your browser and log in with:
 
 - **Email:** `test@example.com`
 - **Password:** `password`
 
 You'll be redirected to the dashboard where you can create and manage visa applications.
+
+!!! info "Port Information"
+    The production build runs on **port 3000**. If you want to run the development server with hot reload instead, use `npm run dev` which will run on port 5173.
 
 ### Step 4: Explore the Application
 
@@ -92,7 +95,7 @@ Now you can:
     - Upload a file and watch it appear instantly via WebSocket
     - Try drag & drop on the file upload zones
     - Monitor queue processing at http://localhost/horizon
-    - Check MinIO storage at http://localhost:8900 (minioadmin / minioadmin)
+    - Check MinIO storage at http://localhost:8900 (sail / password)
 
 ## Service URLs
 
@@ -100,7 +103,7 @@ Now you can:
 
 Once the setup completes, open your browser:
 
-🌐 **Frontend Application:** [http://localhost:5173](http://localhost:5173)
+🌐 **Frontend Application:** [http://localhost:3000](http://localhost:3000)
 
 !!! info "Default Login Credentials"
     - **Email:** `test@example.com`
@@ -112,9 +115,19 @@ While developing, you may need access to these services:
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| **Frontend App** | http://localhost:5173 | test@example.com / password |
+| **Frontend App** | http://localhost:3000 | test@example.com / password |
 | **Backend API** | http://localhost/api | - |
-| **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin |
+| **MinIO Console** | http://localhost:9001 | sail / password |
+
+!!! tip "Development Server"
+    To run the frontend in development mode with hot reload, use:
+    ```bash
+    cd react-router-frontend-app
+    npm run dev
+    ```
+    The dev server will be available at http://localhost:5173
+
+## Verify Installation
 | **Mailpit (Email Testing)** | http://localhost:8025 | - |
 | **WebSocket Server** | ws://localhost:8080 | - |
 
@@ -151,7 +164,7 @@ Expected response: A JSON array of file categories.
 
 ### 3. Test the Frontend
 
-1. Navigate to http://localhost:5173
+1. Navigate to http://localhost:3000
 2. You should see the login page
 3. Login with default credentials
 4. You should see the dashboard
@@ -165,7 +178,7 @@ Now that your application is running, here's what you can do:
 
 ### Create Your First Visa Application
 
-1. **Login** at http://localhost:5173 with `test@example.com` / `password`
+1. **Login** at http://localhost:3000 with `test@example.com` / `password`
 2. Click **"+ New Application"** button
 3. **Select a country** (Portugal, Spain, or Italy)
 4. Click **"Create Application"**
