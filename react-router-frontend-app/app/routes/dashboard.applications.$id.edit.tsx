@@ -1,8 +1,8 @@
 import { Form, redirect, useLoaderData, useNavigation, useRevalidator, useFetcher } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { apiFetch, apiUpload } from "../lib/api-client";
+import { uploadFileDirect } from "../lib/direct-upload";
 import { useState, useEffect } from "react";
-import { ensureEchoInstance } from "../lib/echo.client";
 
 type VisaApplication = {
   id: number;
@@ -140,6 +140,7 @@ export default function EditApplication() {
   const [successCategory, setSuccessCategory] = useState<number | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<number | null>(null);
   const [uploadingCategories, setUploadingCategories] = useState<Set<number>>(new Set());
+  const [uploadProgress, setUploadProgress] = useState<Map<number, number>>(new Map());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,24 +199,34 @@ export default function EditApplication() {
 
     setUploadingCategories(prev => new Set(prev).add(categoryId));
     setUploadError(null);
-
-    const uploadFormData = new FormData();
-    uploadFormData.append("file", file);
-    uploadFormData.append("file_category_id", categoryId.toString());
+    setUploadProgress(prev => new Map(prev).set(categoryId, 0));
 
     try {
-      await apiUpload(
-        `/visa-applications/${application.id}/files`,
-        uploadFormData,
-        undefined as any
+      await uploadFileDirect(
+        file,
+        application.id,
+        categoryId,
+        (progress) => {
+          setUploadProgress(prev => new Map(prev).set(categoryId, progress.percentage));
+        }
       );
       
-      // Don't show success here - wait for WebSocket broadcast
-      // The useEffect hook will handle the success message when broadcast arrives
+      // Show success immediately (no WebSocket needed for direct upload)
+      showSuccess(`File "${file.name}" uploaded successfully!`, categoryId);
+      
+      // Revalidate to fetch the updated file list
+      revalidator.revalidate();
     } catch (error) {
+      console.error("Upload error:", error);
       setUploadError("Failed to upload file. Please try again.");
+    } finally {
       setUploadingCategories(prev => {
         const next = new Set(prev);
+        next.delete(categoryId);
+        return next;
+      });
+      setUploadProgress(prev => {
+        const next = new Map(prev);
         next.delete(categoryId);
         return next;
       });
@@ -234,45 +245,11 @@ export default function EditApplication() {
   };
 
   // Listen to WebSocket events for file upload completion
+  // NOTE: WebSocket events are no longer needed for direct uploads (multipart-file-upload branch)
+  // since we get immediate confirmation. Keeping this commented for backward compatibility.
   useEffect(() => {
-    let channel: any = null;
-
-    ensureEchoInstance().then((echo) => {
-      if (!echo) return;
-
-      channel = echo.private(`visa-applications.${application.id}`);
-
-      // Listen for successful file storage
-      channel.listen('VisaApplicantFileStored', (event: any) => {
-        showSuccess(`File "${event.file.original_name}" uploaded successfully!`, event.file.category.id);
-        setUploadingCategories(prev => {
-          const next = new Set(prev);
-          next.delete(event.file.category.id);
-          return next;
-        });
-        revalidator.revalidate();
-      });
-
-      // Listen for failed file storage
-      channel.listen('VisaApplicantFileFailed', (event: any) => {
-        setUploadError(`Upload failed: ${event.reason}`);
-        if (event.file?.category?.id) {
-          setUploadingCategories(prev => {
-            const next = new Set(prev);
-            next.delete(event.file.category.id);
-            return next;
-          });
-        }
-      });
-    });
-
-    return () => {
-      ensureEchoInstance().then((echo) => {
-        if (echo && channel) {
-          echo.leave(`visa-applications.${application.id}`);
-        }
-      });
-    };
+    // Direct uploads provide immediate feedback, no WebSocket needed
+    // Original WebSocket code has been removed
   }, [application.id, revalidator]);
 
   // Prevent body scroll when modal is open
@@ -441,6 +418,20 @@ export default function EditApplication() {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       <p className="text-sm font-medium text-slate-700">Uploading...</p>
+                      {uploadProgress.has(category.id) && (
+                        <div className="mt-3 max-w-xs mx-auto">
+                          <div className="flex justify-between text-xs text-slate-600 mb-1">
+                            <span>Progress</span>
+                            <span>{uploadProgress.get(category.id)}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress.get(category.id)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <>

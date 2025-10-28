@@ -152,6 +152,7 @@ class ConfigureMinio extends Command
     private function runProcess(array $command, bool $allowFailure = false): Process
     {
         $process = new Process($command);
+        $process->setTimeout(60); // 60 second timeout for MinIO commands
         $process->run();
 
         if (! $process->isSuccessful() && ! $allowFailure) {
@@ -164,6 +165,7 @@ class ConfigureMinio extends Command
     private function runShell(string $command): void
     {
         $process = Process::fromShellCommandline($command);
+        $process->setTimeout(60); // 60 second timeout
         $process->run();
 
         if (! $process->isSuccessful()) {

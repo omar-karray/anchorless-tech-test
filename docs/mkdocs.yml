@@ -9,7 +9,9 @@ nav:
   - Backend Setup: backend-setup.md
   - Backend Architecture: backend-architecture.md
   - Frontend Auth: frontend-auth.md
-  - Multipart Upload Flow: multipard-upload-direct-to-file-storage.md
+  - File Upload:
+      - Implementation Guide: direct-to-storage-upload.md
+      - Architecture Pattern: multipard-upload-direct-to-file-storage.md
   - API Documentation: api-docs.md
   - Frontend Realtime: frontend-realtime.md
   - Troubleshooting: troubleshooting.md

@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DirectUploadController;
 use App\Http\Controllers\FileCategoriesController;
+use App\Http\Controllers\MultipartUploadController;
 use App\Http\Controllers\TestBroadcastController;
 use App\Http\Controllers\VisaApplicantFilesController;
 use App\Http\Controllers\VisaApplicationsController;
@@ -57,5 +59,22 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('visa-applications/{visa_application}/files', 'index')->name('visa-applications.files.index');
         Route::post('visa-applications/{visa_application}/files', 'store')->name('visa-applications.files.store');
         Route::delete('visa-applications/{visa_application}/files/{visaApplicantFile}', 'destroy')->name('visa-applications.files.destroy');
+    });
+
+    // -----------------------------------------------------------
+    // Direct Upload (direct to S3/MinIO for files < 50MB)
+    // -----------------------------------------------------------
+    Route::controller(DirectUploadController::class)->prefix('visa-applications/{visa_application}')->group(function (): void {
+        Route::post('files/direct-upload/initiate', 'initiate')->name('visa-applications.files.direct-upload.initiate');
+        Route::post('files/direct-upload/complete', 'complete')->name('visa-applications.files.direct-upload.complete');
+    });
+
+    // -----------------------------------------------------------
+    // Multipart Upload (direct to S3/MinIO for files >= 50MB)
+    // -----------------------------------------------------------
+    Route::controller(MultipartUploadController::class)->prefix('visa-applications/{visa_application}')->group(function (): void {
+        Route::post('files/multipart/initiate', 'initiate')->name('visa-applications.files.multipart.initiate');
+        Route::post('files/multipart/complete', 'complete')->name('visa-applications.files.multipart.complete');
+        Route::post('files/multipart/abort', 'abort')->name('visa-applications.files.multipart.abort');
     });
 });

@@ -27,13 +27,58 @@ class ConfigureApplication extends Command
             : $this->confirm('Configure MinIO now?', true);
 
         if ($shouldConfigureMinio) {
-            $this->info('Configuring MinIO...');
-            $minioOptions = $this->option('recreate-minio') ? ['--force' => true] : [];
-            $minioResult = $this->call('minio:configure', $minioOptions);
+            $minioConfigured = false;
+            $maxRetries = 3;
+            $attempts = 0;
 
-            if ($minioResult !== Command::SUCCESS) {
-                $this->error('MinIO configuration failed. Aborting.');
-                return $this->finalize($minioResult);
+            while (!$minioConfigured && $attempts < $maxRetries) {
+                $attempts++;
+                
+                if ($attempts > 1) {
+                    $this->warn("MinIO configuration attempt {$attempts} of {$maxRetries}...");
+                } else {
+                    $this->info('Configuring MinIO...');
+                }
+
+                try {
+                    $minioOptions = $this->option('recreate-minio') ? ['--force' => true] : [];
+                    $minioResult = $this->call('minio:configure', $minioOptions);
+
+                    if ($minioResult === Command::SUCCESS) {
+                        $minioConfigured = true;
+                    } else {
+                        if ($attempts < $maxRetries) {
+                            $retry = $this->confirm('MinIO configuration failed. Would you like to retry?', true);
+                            if (!$retry) {
+                                $this->error('MinIO configuration aborted by user.');
+                                return $this->finalize(Command::FAILURE);
+                            }
+                            sleep(2); // Wait before retry
+                        } else {
+                            $this->error('MinIO configuration failed after multiple attempts.');
+                            return $this->finalize($minioResult);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $this->error("MinIO error: {$e->getMessage()}");
+                    
+                    if ($attempts < $maxRetries) {
+                        $retry = $this->confirm('An error occurred. Would you like to retry MinIO configuration?', true);
+                        if (!$retry) {
+                            $this->error('MinIO configuration aborted by user.');
+                            return $this->finalize(Command::FAILURE);
+                        }
+                        sleep(2); // Wait before retry
+                    } else {
+                        $this->error('MinIO configuration failed after multiple attempts.');
+                        return $this->finalize(Command::FAILURE);
+                    }
+                }
+            }
+
+            if (!$minioConfigured) {
+                $this->error('Failed to configure MinIO. Aborting.');
+                return $this->finalize(Command::FAILURE);
             }
         } else {
             if ($this->option('recreate-minio')) {

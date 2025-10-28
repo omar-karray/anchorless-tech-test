@@ -103,7 +103,7 @@ Return all uploaded files for the specified visa application (the path parameter
   }
   ```
 
-### POST `/api/visa-applications/{visa_application}/files`
+### POST `/api/visa-applications/{visa_application}/files` (Queue-Based)
 Upload a dossier document for a specific visa application. The upload is accepted, stored temporarily, and queued for asynchronous processing; Horizon moves the file to its final location and broadcasts the result over Reverb.
 
 - **Body** (multipart/form-data)
@@ -135,6 +135,205 @@ Upload a dossier document for a specific visa application. The upload is accepte
     }
     ```
   Subscribe via Laravel Echo (Reverb driver) or any Pusher-compatible WebSocket client.
+
+---
+
+## Direct File Upload (Direct-to-Storage)
+
+**Branch:** `multipart-file-upload`
+
+These endpoints enable direct browser-to-MinIO uploads using pre-signed URLs, eliminating the need to proxy files through the Laravel backend. Two strategies are available based on file size:
+
+- **Direct Upload** (< 50MB): Single PUT request with entire file
+- **Multipart Upload** (≥ 50MB): File split into 5MB chunks, uploaded in parallel
+
+### POST `/api/visa-applications/{visa_application}/files/direct-upload/initiate`
+Request a pre-signed URL for direct upload of files under 50MB.
+
+- **Body** (JSON)
+  ```json
+  {
+    "filename": "passport.pdf",
+    "content_type": "application/pdf",
+    "file_size": 5242880
+  }
+  ```
+- **Response `200`**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "file_key": "visa-applications/123/files/2024-10-28_143022_a1b2c3d4.pdf",
+      "presigned_url": "https://minio.example.com/bucket/visa-applications/123/...",
+      "expiry": "2024-10-28T15:30:22+00:00"
+    },
+    "message": "Pre-signed URL generated successfully. Upload your file directly to the provided URL."
+  }
+  ```
+- **Validation Errors `422`**
+  - `filename` is required (max 255 chars)
+  - `content_type` is required (max 100 chars)
+  - `file_size` is required, must be 1-52428800 bytes (50MB max)
+
+**Client Flow:**
+1. Request pre-signed URL from this endpoint
+2. Upload file directly to MinIO using `PUT` request to `presigned_url`
+3. Call completion endpoint with `file_key`
+
+### POST `/api/visa-applications/{visa_application}/files/direct-upload/complete`
+Confirm completion of direct upload and create database record.
+
+- **Body** (JSON)
+  ```json
+  {
+    "file_key": "visa-applications/123/files/2024-10-28_143022_a1b2c3d4.pdf",
+    "filename": "passport.pdf",
+    "content_type": "application/pdf",
+    "file_size": 5242880,
+    "file_category_id": 1
+  }
+  ```
+- **Response `200`**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "file": {
+        "id": 456,
+        "file_name": "passport.pdf",
+        "file_size": 5242880,
+        "mime_type": "application/pdf",
+        "created_at": "2024-10-28T14:30:25+00:00"
+      }
+    },
+    "message": "File upload completed successfully."
+  }
+  ```
+- **Validation Errors `422`**
+  - All fields are required
+  - `file_key` must match the key from initiate response
+  - `file_category_id` must exist in database
+
+### POST `/api/visa-applications/{visa_application}/files/multipart/initiate`
+Initiate multipart upload for files 50MB or larger.
+
+- **Body** (JSON)
+  ```json
+  {
+    "file_category_id": 1,
+    "file_name": "large-document.pdf",
+    "file_size": 104857600,
+    "mime_type": "application/pdf",
+    "total_parts": 20
+  }
+  ```
+- **Response `200`**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "upload_id": "abc123xyz789",
+      "key": "visa-applications/123/files/2024-10-28_143530_e5f6g7h8.pdf",
+      "presigned_urls": [
+        {
+          "part_number": 1,
+          "url": "https://minio.example.com/bucket/..."
+        },
+        {
+          "part_number": 2,
+          "url": "https://minio.example.com/bucket/..."
+        }
+      ],
+      "expires_in": 3600
+    }
+  }
+  ```
+- **Validation Errors `422`**
+  - `file_size` max 524288000 bytes (500MB)
+  - `total_parts` max 10000 parts
+  - `file_category_id` must exist
+
+**Client Flow:**
+1. Request upload initiation with file metadata
+2. Upload each part using `PUT` to respective pre-signed URLs
+3. Collect ETags from upload responses
+4. Call completion endpoint with `upload_id` and parts array
+
+### POST `/api/visa-applications/{visa_application}/files/multipart/complete`
+Complete multipart upload by assembling all uploaded parts.
+
+- **Body** (JSON)
+  ```json
+  {
+    "upload_id": "abc123xyz789",
+    "parts": [
+      { "part_number": 1, "etag": "abc123..." },
+      { "part_number": 2, "etag": "def456..." }
+    ]
+  }
+  ```
+- **Response `200`**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "file": {
+        "id": 457,
+        "file_name": "large-document.pdf",
+        "file_size": 104857600,
+        "mime_type": "application/pdf",
+        "created_at": "2024-10-28T14:40:15+00:00"
+      }
+    },
+    "message": "Multipart upload completed successfully."
+  }
+  ```
+- **Validation Errors `422`**
+  - `upload_id` is required
+  - `parts` array is required with at least 1 part
+  - Each part must have `part_number` (integer) and `etag` (string)
+
+### POST `/api/visa-applications/{visa_application}/files/multipart/abort`
+Cancel a multipart upload and clean up partial data.
+
+- **Body** (JSON)
+  ```json
+  {
+    "upload_id": "abc123xyz789"
+  }
+  ```
+- **Response `200`**
+  ```json
+  {
+    "success": true,
+    "message": "Multipart upload aborted successfully."
+  }
+  ```
+- **Error `500`** – when upload session not found or S3 operation fails
+
+**When to Use Which Upload Method:**
+- **Files < 50MB**: Use Direct Upload (simpler, faster, single request)
+- **Files ≥ 50MB**: Use Multipart Upload (parallel chunks, resume capability, progress tracking)
+
+**Security Notes:**
+- All endpoints require authentication via Sanctum
+- Users can only upload to their own visa applications (Gate authorization)
+- Pre-signed URLs expire after 1 hour
+- File size limits enforced at validation layer
+
+**Configuration:**
+```env
+MINIO_ENDPOINT=http://minio:9000
+MINIO_KEY=minioadmin
+MINIO_SECRET=minioadmin
+MINIO_BUCKET=visa-applications
+```
+
+See `/docs/direct-to-storage-upload.md` for detailed implementation guide and frontend examples.
+
+---
+
+## Visa Files (Continued)
 
 ### DELETE `/api/visa-applications/{visa_application}/files/{visa_applicant_file}`
 Delete an uploaded file that belongs to the authenticated applicant and the specified visa application.

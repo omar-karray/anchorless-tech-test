@@ -28,7 +28,8 @@ make app-boot
 ### Technical Deep Dives
 
 - **[Data Model](data-model.md)** - Database schema and relationships
-- **[Multipart Upload Flow](multipard-upload-direct-to-file-storage.md)** - File upload architecture with MinIO
+- **[Direct-to-Storage Upload](direct-to-storage-upload.md)** - Implementation guide for direct file uploads (< 50MB) and multipart uploads (≥ 50MB)
+- **[Multipart Upload Architecture](multipard-upload-direct-to-file-storage.md)** - Planning document for direct-to-object-storage pattern
 - **[Frontend Realtime](frontend-realtime.md)** - WebSocket implementation with Laravel Reverb
 
 ## 🏗️ System Overview
