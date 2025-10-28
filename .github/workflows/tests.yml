@@ -31,11 +31,13 @@ jobs:
       - name: Install Composer dependencies
         run: docker compose exec -T laravel.test composer install --no-interaction --prefer-dist --optimize-autoloader
       
-      - name: Configure application
-        run: make app-configure args="--yes"
+      - name: Configure application (skip tests)
+        run: |
+          docker compose exec -T laravel.test php artisan minio:configure --force
+          docker compose exec -T laravel.test php artisan migrate:fresh --seed --force
       
       - name: Run tests
-        run: make backend-artisan cmd="test"
+        run: docker compose exec -T laravel.test php artisan test
       
       - name: Display logs on failure
         if: failure()

@@ -11,7 +11,10 @@ services-down:
 service-restart-%:
 	docker compose restart $*
 
-app-configure:
+backend-composer-install:
+	docker compose exec laravel.test composer install --no-interaction
+
+app-configure: backend-composer-install
 	docker compose exec laravel.test php artisan app:configure $(args)
 
 app-boot:
@@ -37,7 +40,7 @@ frontend-build:
 	docker compose exec react-frontend npm run build
 
 frontend-dev:
-	docker compose exec react-frontend npm run dev
+	docker compose exec react-frontend npm run dev -- --host
 
 # Backend utilities --------------------------------------------------------
 
@@ -50,4 +53,4 @@ backend-composer:
 backend-bash:
 	docker compose exec laravel.test bash
 
-.PHONY: sync-env services-up services-down service-restart-% app-configure app-boot app-reboot frontend-sh frontend-install frontend-build frontend-dev backend-artisan backend-composer backend-bash
+.PHONY: sync-env services-up services-down service-restart-% backend-composer-install app-configure app-boot app-reboot frontend-sh frontend-install frontend-build frontend-dev backend-artisan backend-composer backend-bash
