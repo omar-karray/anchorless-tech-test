@@ -28,6 +28,9 @@ jobs:
       - name: Wait for services to be ready
         run: sleep 30
       
+      - name: Install Composer dependencies
+        run: docker compose exec -T laravel.test composer install --no-interaction --prefer-dist --optimize-autoloader
+      
       - name: Configure application
         run: make app-configure args="--yes"
       
